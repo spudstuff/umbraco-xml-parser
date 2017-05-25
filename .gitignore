@@ -286,3 +286,10 @@ __pycache__/
 *.btm.cs
 *.odx.cs
 *.xsd.cs
+
+# NCrunch
+*.ncrunchsolution.user
+nCrunchTemp_*
+*.v2.ncrunchproject
+*.v2.ncrunchsolution
+

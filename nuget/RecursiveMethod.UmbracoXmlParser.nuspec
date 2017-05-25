@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+    <metadata>
+        <id>RecursiveMethod.UmbracoXmlParser</id>
+        <version>1.0.0</version>
+        <title>RecursiveMethod.UmbracoXmlParser</title>
+        <authors>Adam Nelson</authors>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>
+            Package for making parsing an umbraco.config XML cache file easier.
+        </description>
+        <projectUrl>https://github.com/spudstuff/umbraco-xml-parser</projectUrl>
+        <dependencies />
+    </metadata>
+    <files>
+        <file src="..\UmbracoXmlParser\bin\release\RecursiveMethod.UmbracoXmlParser.dll" target="lib\net40\" />
+        <file src="..\UmbracoXmlParser\bin\release\RecursiveMethod.UmbracoXmlParser.pdb" target="lib\net40\" />
+    </files>
+</package>
