@@ -40,6 +40,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Domain\UmbracoNode.cs" />
+    <Compile Include="Domain\UmbracoXmlParsingException.cs" />
     <Compile Include="UmbracoXmlParser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

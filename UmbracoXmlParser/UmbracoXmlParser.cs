@@ -102,10 +102,16 @@ namespace RecursiveMethod.UmbracoXmlParser
                 {
                     List<int> nodeIdPaths = GetNodeIdPath(element);
                     int nodeId = Convert.ToInt32(element.Attribute("id").Value);
-                    var url = GetUrlForNodeIdPaths(nodeIdPaths);
+                    var url = GetUrlForNodeIdPaths(nodeIdPaths, element.Element("umbracoUrlAlias"));
                     var pathNames = GetPathNamesForNodeIdPaths(nodeIdPaths);
 
                     _nodes[nodeId] = new UmbracoNode(nodeId, element, url, nodeIdPaths, pathNames);
+
+                    // Set parent
+                    if (_nodes[nodeId].ParentId != null && _nodes.ContainsKey(_nodes[nodeId].ParentId.Value))
+                    {
+                        _nodes[nodeId].Parent = _nodes[_nodes[nodeId].ParentId.Value];
+                    }
                 }
             }
         }
@@ -122,7 +128,7 @@ namespace RecursiveMethod.UmbracoXmlParser
             return paths;
         }
 
-        private string GetUrlForNodeIdPaths(List<int> nodeIdPaths)
+        private string GetUrlForNodeIdPaths(List<int> nodeIdPaths, XElement urlAlias)
         {
             if (!_urlFragmentCache.Any())
             {
@@ -146,6 +152,17 @@ namespace RecursiveMethod.UmbracoXmlParser
                 var urlFragment = _urlFragmentCache[nodeId];
                 url += sep + urlFragment;
                 sep = "/";
+
+                // If we have a custom domain attached to this nodeId AND we have a urlAlias defined, concatenate and return here
+                if (urlAlias != null && !string.IsNullOrWhiteSpace(urlAlias.Value))
+                {
+                    var firstUrlAlias = urlAlias.Value.Split(',')[0];
+                    if (_urlPrefixMapping != null && _urlPrefixMapping.ContainsKey(nodeId))
+                    {
+                        return url + "/" + firstUrlAlias.TrimStart('/');
+                    }
+                    return firstUrlAlias;
+                }
             }
 
             return url;
@@ -185,6 +202,13 @@ namespace RecursiveMethod.UmbracoXmlParser
                 if (element.Attribute("id") != null && element.Attribute("urlName") != null)
                 {
                     var nodeId = Convert.ToInt32(element.Attribute("id").Value);
+                    var urlName = element.Attribute("urlName").Value;
+
+                    // Can be overridden with an umbracoUrlName element
+                    if (element.Element("umbracoUrlName") != null && !string.IsNullOrWhiteSpace(element.Element("umbracoUrlName").Value))
+                    {
+                        urlName = element.Element("umbracoUrlName").Value;
+                    }
 
                     // Node might have a URL prefix configured
                     if (_urlPrefixMapping != null && _urlPrefixMapping.ContainsKey(nodeId))
@@ -193,7 +217,7 @@ namespace RecursiveMethod.UmbracoXmlParser
                     }
                     else
                     {
-                        _urlFragmentCache[nodeId] = element.Attribute("urlName").Value;
+                        _urlFragmentCache[nodeId] = urlName;
 
                     }
                     _pathFragmentCache[nodeId] = element.Attribute("nodeName").Value;

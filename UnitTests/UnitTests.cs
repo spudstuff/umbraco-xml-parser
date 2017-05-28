@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using RecursiveMethod.UmbracoXmlParser.Domain;
 
 namespace RecursiveMethod.UmbracoXmlParser.UnitTests
 {
@@ -30,6 +31,62 @@ namespace RecursiveMethod.UmbracoXmlParser.UnitTests
         }
 
         [TestMethod]
+        public void InvalidCreateDateAttribute()
+        {
+            bool exceptionThrown = false;
+            var tempFile = GetUmbracoConfigFromResource("umbraco-bad-createdate.config");
+            try
+            {
+                new UmbracoXmlParser(tempFile);
+            }
+            catch (UmbracoXmlParsingException ex)
+            {
+                Assert.AreEqual("Unparsable createDate attribute '2017-05-16T08:55:20.4171241+10:00' on node ID 1072", ex.Message);
+                exceptionThrown = true;
+            }
+            try
+            {
+                File.Delete(_tempFile);
+            }
+            catch
+            {
+            }
+
+            if (!exceptionThrown)
+            {
+                Assert.Fail("Exception not thrown while parsing invalid create date in umbraco.config");
+            }
+        }
+
+        [TestMethod]
+        public void InvalidUpdateDateAttribute()
+        {
+            bool exceptionThrown = false;
+            var tempFile = GetUmbracoConfigFromResource("umbraco-bad-updatedate.config");
+            try
+            {
+                new UmbracoXmlParser(tempFile);
+            }
+            catch (UmbracoXmlParsingException ex)
+            {
+                Assert.AreEqual("Unparsable updateDate attribute '2017-05-16T08:55:20.4171241+10:00' on node ID 1072", ex.Message);
+                exceptionThrown = true;
+            }
+            try
+            {
+                File.Delete(_tempFile);
+            }
+            catch
+            {
+            }
+
+            if (!exceptionThrown)
+            {
+                Assert.Fail("Exception not thrown while parsing invalid update date in umbraco.config");
+            }
+        }
+
+        [TestMethod]
         public void RootNodePropertiesSet()
         {
             var parser = new UmbracoXmlParser(_tempFile);
@@ -44,8 +101,12 @@ namespace RecursiveMethod.UmbracoXmlParser.UnitTests
             Assert.AreEqual(new DateTime(2016, 9, 1, 16, 45, 19), node.UpdateDate);
             Assert.AreEqual("admin", node.CreatorName);
             Assert.AreEqual("james", node.WriterName);
+            Assert.AreEqual(1067, node.TemplateId);
             CollectionAssert.AreEqual(new[] { 1069 }, node.PathIds);
             CollectionAssert.AreEqual(new[] { "Example Site" }, node.PathNames);
+            
+            // Parent
+            Assert.IsNull(node.Parent);
         }
 
         [TestMethod]
@@ -58,13 +119,29 @@ namespace RecursiveMethod.UmbracoXmlParser.UnitTests
             Assert.AreEqual("Article", node.Doctype);
             Assert.AreEqual(4, node.Level);
             Assert.AreEqual("People with No or Bad Credit Score", node.Name);
-            Assert.AreEqual("example-site/news/oct-2014/people-with-no-or-bad-credit-score", node.Url);
+            Assert.AreEqual("example-site/news/oct-2014/people-with-bad-credit-score", node.Url);
             Assert.AreEqual(new DateTime(2015, 5, 13, 12, 10, 33), node.CreateDate);
             Assert.AreEqual(new DateTime(2015, 10, 22, 7, 42, 8), node.UpdateDate);
             Assert.AreEqual("angela", node.CreatorName);
             Assert.AreEqual("admin", node.WriterName);
+            Assert.AreEqual(1067, node.TemplateId);
             CollectionAssert.AreEqual(new [] { 1069, 1239, 2447, 2448 }, node.PathIds);
             CollectionAssert.AreEqual(new [] { "Example Site", "News", "Oct 2014", "People with No or Bad Credit Score" }, node.PathNames);
+
+            // Parent
+            Assert.AreEqual(2447, node.Parent.Id);
+            Assert.AreEqual(1239, node.Parent.ParentId);
+            Assert.AreEqual("DateFolder", node.Parent.Doctype);
+            Assert.AreEqual(3, node.Parent.Level);
+            Assert.AreEqual("Oct 2014", node.Parent.Name);
+            Assert.AreEqual("example-site/news/oct-2014", node.Parent.Url);
+            Assert.AreEqual(new DateTime(2015, 5, 13, 12, 10, 32), node.Parent.CreateDate);
+            Assert.AreEqual(new DateTime(2015, 5, 13, 12, 10, 32), node.Parent.UpdateDate);
+            Assert.AreEqual("admin", node.Parent.CreatorName);
+            Assert.AreEqual("admin", node.Parent.WriterName);
+            Assert.AreEqual(0, node.Parent.TemplateId);
+            CollectionAssert.AreEqual(new[] { 1069, 1239, 2447 }, node.Parent.PathIds);
+            CollectionAssert.AreEqual(new[] { "Example Site", "News", "Oct 2014" }, node.Parent.PathNames);
         }
 
         [TestMethod]
@@ -73,6 +150,10 @@ namespace RecursiveMethod.UmbracoXmlParser.UnitTests
             var parser = new UmbracoXmlParser(_tempFile, new Dictionary<int, string> { { 1069, "https://www.example.com"} });
             var node = parser.GetNode(1069);
             Assert.AreEqual("https://www.example.com", node.Url);
+
+            // Node 2499 has an umbracoUrlAlias set, which is used along side the root node URL prefix
+            node = parser.GetNode(2499);
+            Assert.AreEqual("https://www.example.com/news/make-a-wise-decision", node.Url);
         }
 
         [TestMethod]
@@ -80,7 +161,7 @@ namespace RecursiveMethod.UmbracoXmlParser.UnitTests
         {
             var parser = new UmbracoXmlParser(_tempFile, new Dictionary<int, string> { { 1069, "https://www.example.com" } });
             var node = parser.GetNode(2448);
-            Assert.AreEqual("https://www.example.com/news/oct-2014/people-with-no-or-bad-credit-score", node.Url);
+            Assert.AreEqual("https://www.example.com/news/oct-2014/people-with-bad-credit-score", node.Url);
         }
 
         [TestMethod]
@@ -88,7 +169,7 @@ namespace RecursiveMethod.UmbracoXmlParser.UnitTests
         {
             var parser = new UmbracoXmlParser(_tempFile, new Dictionary<int, string> { { 1069, "https://www.example.com/" } });
             var node = parser.GetNode(2448);
-            Assert.AreEqual("https://www.example.com/news/oct-2014/people-with-no-or-bad-credit-score", node.Url);
+            Assert.AreEqual("https://www.example.com/news/oct-2014/people-with-bad-credit-score", node.Url);
         }
 
         [TestMethod]
@@ -160,6 +241,7 @@ namespace RecursiveMethod.UmbracoXmlParser.UnitTests
             Assert.AreEqual(new DateTime(2016, 9, 1, 16, 45, 19), enumerator.Current.UpdateDate);
             Assert.AreEqual("admin", enumerator.Current.CreatorName);
             Assert.AreEqual("james", enumerator.Current.WriterName);
+            Assert.AreEqual(1067, enumerator.Current.TemplateId);
             CollectionAssert.AreEqual(new[] { 1069 }, enumerator.Current.PathIds);
             CollectionAssert.AreEqual(new[] { "Example Site" }, enumerator.Current.PathNames);
 
@@ -174,6 +256,7 @@ namespace RecursiveMethod.UmbracoXmlParser.UnitTests
             Assert.AreEqual(new DateTime(2016, 8, 30, 10, 16, 30), enumerator.Current.UpdateDate);
             Assert.AreEqual("admin", enumerator.Current.CreatorName);
             Assert.AreEqual("fred", enumerator.Current.WriterName);
+            Assert.AreEqual(1067, enumerator.Current.TemplateId);
             CollectionAssert.AreEqual(new[] { 1069, 1072 }, enumerator.Current.PathIds);
             CollectionAssert.AreEqual(new[] { "Example Site", "Homepage" }, enumerator.Current.PathNames);
 
@@ -188,6 +271,7 @@ namespace RecursiveMethod.UmbracoXmlParser.UnitTests
             Assert.AreEqual(new DateTime(2016, 5, 18, 5, 44, 15), enumerator.Current.UpdateDate);
             Assert.AreEqual("sally", enumerator.Current.CreatorName);
             Assert.AreEqual("admin", enumerator.Current.WriterName);
+            Assert.AreEqual(1067, enumerator.Current.TemplateId);
             CollectionAssert.AreEqual(new[] { 1069, 2552 }, enumerator.Current.PathIds);
             CollectionAssert.AreEqual(new[] { "Example Site", "Content" }, enumerator.Current.PathNames);
 
@@ -202,6 +286,7 @@ namespace RecursiveMethod.UmbracoXmlParser.UnitTests
             Assert.AreEqual(new DateTime(2016, 3, 1, 5, 39, 24), enumerator.Current.UpdateDate);
             Assert.AreEqual("admin", enumerator.Current.CreatorName);
             Assert.AreEqual("admin", enumerator.Current.WriterName);
+            Assert.AreEqual(1067, enumerator.Current.TemplateId);
             CollectionAssert.AreEqual(new[] { 1069, 1239 }, enumerator.Current.PathIds);
             CollectionAssert.AreEqual(new[] { "Example Site", "News" }, enumerator.Current.PathNames);
 
@@ -216,6 +301,7 @@ namespace RecursiveMethod.UmbracoXmlParser.UnitTests
             Assert.AreEqual(new DateTime(2015, 5, 13, 12, 10, 32), enumerator.Current.UpdateDate);
             Assert.AreEqual("admin", enumerator.Current.CreatorName);
             Assert.AreEqual("admin", enumerator.Current.WriterName);
+            Assert.AreEqual(0, enumerator.Current.TemplateId);
             CollectionAssert.AreEqual(new[] { 1069, 1239, 2447 }, enumerator.Current.PathIds);
             CollectionAssert.AreEqual(new[] { "Example Site", "News", "Oct 2014" }, enumerator.Current.PathNames);
 
@@ -225,11 +311,12 @@ namespace RecursiveMethod.UmbracoXmlParser.UnitTests
             Assert.AreEqual("Article", enumerator.Current.Doctype);
             Assert.AreEqual(4, enumerator.Current.Level);
             Assert.AreEqual("People with No or Bad Credit Score", enumerator.Current.Name);
-            Assert.AreEqual("example-site/news/oct-2014/people-with-no-or-bad-credit-score", enumerator.Current.Url);
+            Assert.AreEqual("example-site/news/oct-2014/people-with-bad-credit-score", enumerator.Current.Url);
             Assert.AreEqual(new DateTime(2015, 5, 13, 12, 10, 33), enumerator.Current.CreateDate);
             Assert.AreEqual(new DateTime(2015, 10, 22, 7, 42, 8), enumerator.Current.UpdateDate);
             Assert.AreEqual("angela", enumerator.Current.CreatorName);
             Assert.AreEqual("admin", enumerator.Current.WriterName);
+            Assert.AreEqual(1067, enumerator.Current.TemplateId);
             CollectionAssert.AreEqual(new[] { 1069, 1239, 2447, 2448 }, enumerator.Current.PathIds);
             CollectionAssert.AreEqual(new[] { "Example Site", "News", "Oct 2014", "People with No or Bad Credit Score" }, enumerator.Current.PathNames);
 
@@ -239,22 +326,23 @@ namespace RecursiveMethod.UmbracoXmlParser.UnitTests
             Assert.AreEqual("Article", enumerator.Current.Doctype);
             Assert.AreEqual(4, enumerator.Current.Level);
             Assert.AreEqual("Make a Wise Decision by Comparing Price Online", enumerator.Current.Name);
-            Assert.AreEqual("example-site/news/oct-2014/make-a-wise-decision-by-comparing-price-online", enumerator.Current.Url);
+            Assert.AreEqual("news/make-a-wise-decision", enumerator.Current.Url);
             Assert.AreEqual(new DateTime(2015, 5, 15, 10, 30, 43), enumerator.Current.CreateDate);
             Assert.AreEqual(new DateTime(2015, 6, 18, 16, 38, 31), enumerator.Current.UpdateDate);
             Assert.AreEqual("anish", enumerator.Current.CreatorName);
             Assert.AreEqual("anish", enumerator.Current.WriterName);
+            Assert.AreEqual(1067, enumerator.Current.TemplateId);
             CollectionAssert.AreEqual(new[] { 1069, 1239, 2447, 2499 }, enumerator.Current.PathIds);
             CollectionAssert.AreEqual(new[] { "Example Site", "News", "Oct 2014", "Make a Wise Decision by Comparing Price Online" }, enumerator.Current.PathNames);
         }
 
-        private string GetUmbracoConfigFromResource()
+        private string GetUmbracoConfigFromResource(string resourceName = "umbraco.config")
         {
             FileStream fs;
             var tempFile = Path.GetTempFileName();
             using (fs = new FileStream(tempFile, FileMode.Create, FileAccess.ReadWrite, FileShare.Read, 4096))
             {
-                var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("RecursiveMethod.UmbracoXmlParser.UnitTests.Resources.umbraco.config");
+                var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("RecursiveMethod.UmbracoXmlParser.UnitTests.Resources." + resourceName);
                 stream.Seek(0, SeekOrigin.Begin);
                 stream.CopyTo(fs);
                 fs.Close();

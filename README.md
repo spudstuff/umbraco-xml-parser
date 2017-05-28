@@ -9,6 +9,8 @@ This XML cache contains all published content and property data and can be used 
 * Content analysis _(eg. how many articles do not have a populated meta description property?)_
 * Content reporting  _(eg. how many published articles do we have this month?)_
 
+As of version [1.0.2](https://www.nuget.org/packages/RecursiveMethod.UmbracoXmlParser/1.0.2) and later, Umbraco XML Parser understands the commonly used [umbracoUrlAlias](https://our.umbraco.org/Documentation/Reference/Routing/routing-properties) and [umbracoUrlName](https://our.umbraco.org/Documentation/Reference/Routing/routing-properties) elements to set the URL of the node in question. Note if the umbracoUrlAlias contains multiple aliases (comma separated), then only the first will be used as the URL.
+
 Getting
 -------
 
@@ -72,6 +74,7 @@ var parser = new UmbracoXmlParser("umbraco.config", new Dictionary<int, string>
 | ------------|------------------------------------------------------------------------------------------------|
 | Id          | Node ID.                                                                                       |
 | ParentId    | Parent node ID. Will be `NULL` (and not -1) for the top-level nodes.                           |
+| Parent      | Parent node of type `UmbracoNode`. Will be `NULL` for the top-level nodes.                     |
 | Name        | Node name.                                                                                     |
 | Url         | Node URL (see also the ability to assign URL prefixes during construction of UmbracoXmlParser. |
 | PathIds     | A List<int> of node IDs from the root node to this node.                                       |
@@ -82,6 +85,7 @@ var parser = new UmbracoXmlParser("umbraco.config", new Dictionary<int, string>
 | UpdateDate  | Date the node was updated.                                                                     |
 | CreatorName | Name of the creator.                                                                           |
 | WriterName  | Name of the writer.                                                                            |
+| TemplateId  | Internal Umbraco template ID. Can be used to identify nodes by template.                       |
 
 #### UmbracoNode Methods
 | Name                                        | Description                                                                |

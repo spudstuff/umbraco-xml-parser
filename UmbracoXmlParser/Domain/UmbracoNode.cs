@@ -9,6 +9,9 @@ namespace RecursiveMethod.UmbracoXmlParser.Domain
     public class UmbracoNode
     {
         public int Id { get; private set; }
+
+        public UmbracoNode Parent { get; internal set; }
+
         public int? ParentId { get; private set; }
         public string Name { get; private set; }
         public string Url { get; private set; }
@@ -20,6 +23,7 @@ namespace RecursiveMethod.UmbracoXmlParser.Domain
         public DateTime UpdateDate { get; private set; }
         public string CreatorName { get; private set; }
         public string WriterName { get; private set; }
+        public int TemplateId { get; private set; }
         private readonly XElement _element;
 
         internal UmbracoNode(int id, XElement element, string url, List<int> pathIds, List<string> pathNames)
@@ -39,10 +43,25 @@ namespace RecursiveMethod.UmbracoXmlParser.Domain
             PathNames = pathNames;
             Doctype = element.Name.LocalName;
             Level = pathIds.Count - 1;
-            CreateDate = DateTime.ParseExact(element.Attribute("createDate").Value, "yyyy-MM-ddTHH:mm:ss", CultureInfo.GetCultureInfo("en-us"));
-            UpdateDate = DateTime.ParseExact(element.Attribute("updateDate").Value, "yyyy-MM-ddTHH:mm:ss", CultureInfo.GetCultureInfo("en-us"));
+            try
+            {
+                CreateDate = DateTime.ParseExact(element.Attribute("createDate").Value, "yyyy-MM-ddTHH:mm:ss", CultureInfo.GetCultureInfo("en-us"));
+            }
+            catch (Exception e)
+            {
+                throw new UmbracoXmlParsingException(string.Format("Unparsable createDate attribute '{0}' on node ID {1}", element.Attribute("createDate").Value, Id), e);
+            }
+            try
+            {
+                UpdateDate = DateTime.ParseExact(element.Attribute("updateDate").Value, "yyyy-MM-ddTHH:mm:ss", CultureInfo.GetCultureInfo("en-us"));
+            }
+            catch (Exception e)
+            {
+                throw new UmbracoXmlParsingException(string.Format("Unparsable updateDate attribute '{0}' on node ID {1}", element.Attribute("updateDate").Value, Id), e);
+            }
             CreatorName = element.Attribute("creatorName").Value;
             WriterName = element.Attribute("writerName").Value;
+            TemplateId = Convert.ToInt32(element.Attribute("template").Value);
         }
 
         /// <summary>
