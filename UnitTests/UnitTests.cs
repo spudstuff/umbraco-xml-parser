@@ -336,6 +336,39 @@ namespace RecursiveMethod.UmbracoXmlParser.UnitTests
             CollectionAssert.AreEqual(new[] { "Example Site", "News", "Oct 2014", "Make a Wise Decision by Comparing Price Online" }, enumerator.Current.PathNames);
         }
 
+        [TestMethod]
+        public void GetProperties()
+        {
+            var parser = new UmbracoXmlParser(_tempFile);
+            var node = parser.GetNode(2552);
+            var dictionary = node.GetProperties();
+            Assert.AreEqual(9, dictionary.Keys.Count);
+            Assert.AreEqual("2015-05-22T12:10:22", dictionary["dateField"]);
+            Assert.AreEqual("0", dictionary["boolFieldFalse"]);
+            Assert.AreEqual("1", dictionary["boolFieldTrue"]);
+            Assert.AreEqual("2048", dictionary["intField"]);
+            Assert.AreEqual("<nodes><node>1</node><node>2</node><node>3</node></nodes>", dictionary["xmlField"]);
+            Assert.AreEqual("This is a long string with special < > characters.", dictionary["stringField"]);
+        }
+
+        [TestMethod]
+        public void TestEscapingAndCdata()
+        {
+            var parser = new UmbracoXmlParser(_tempFile);
+            var node = parser.GetNode(2552);
+            var dictionary = node.GetProperties();
+
+            // <escapedString>Jack &amp; Jill</escapedString>
+            // <cdataString><![CDATA[Jack & Jill]]></cdataString>
+            // <cdataEscapedString><![CDATA[Jack &amp; Jill]]></cdataEscapedString>
+            Assert.AreEqual("Jack & Jill", dictionary["escapedString"]);
+            Assert.AreEqual("Jack & Jill", node.GetPropertyAsString("escapedString"));
+            Assert.AreEqual("Jack & Jill", dictionary["cdataString"]);
+            Assert.AreEqual("Jack & Jill", node.GetPropertyAsString("cdataString"));
+            Assert.AreEqual("Jack &amp; Jill", dictionary["cdataEscapedString"]);
+            Assert.AreEqual("Jack &amp; Jill", node.GetPropertyAsString("cdataEscapedString"));
+        }
+
         private string GetUmbracoConfigFromResource(string resourceName = "umbraco.config")
         {
             FileStream fs;

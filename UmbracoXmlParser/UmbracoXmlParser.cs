@@ -11,6 +11,7 @@ namespace RecursiveMethod.UmbracoXmlParser
         public XDocument ParsedXml { get; private set; }
 
         private readonly Dictionary<int, UmbracoNode> _nodes = new Dictionary<int, UmbracoNode>();
+        private readonly List<UmbracoNode> _nodesInOrder = new List<UmbracoNode>();
         private readonly Dictionary<int, string> _urlFragmentCache = new Dictionary<int, string>();
         private readonly Dictionary<int, string> _pathFragmentCache = new Dictionary<int, string>();
         private readonly Dictionary<int, string> _urlPrefixMapping;
@@ -58,6 +59,9 @@ namespace RecursiveMethod.UmbracoXmlParser
 
             // Parse content into an in-memory dictionary of node ID and node information
             ParseIntoUmbracoNodes();
+
+            // Destroy
+            ParsedXml = null;
         }
 
         /// <summary>
@@ -81,14 +85,9 @@ namespace RecursiveMethod.UmbracoXmlParser
         /// <returns>IEnumerable of <see cref="UmbracoNode"/>.</returns>
         public IEnumerable<UmbracoNode> GetNodes()
         {
-            foreach (var element in ParsedXml.Descendants())
+            foreach (var umbracoNode in _nodesInOrder)
             {
-                // Elements that have an id and urlName attribute are Umbraco nodes.
-                if (element.Attribute("id") != null && element.Attribute("urlName") != null)
-                {
-                    int nodeId = Convert.ToInt32(element.Attribute("id").Value);
-                    yield return GetNode(nodeId);
-                }
+                yield return umbracoNode;
             }
         }
 
@@ -112,6 +111,9 @@ namespace RecursiveMethod.UmbracoXmlParser
                     {
                         _nodes[nodeId].Parent = _nodes[_nodes[nodeId].ParentId.Value];
                     }
+
+                    // Add to the list in order (for multiple enumeration in GetNodes())
+                    _nodesInOrder.Add(_nodes[nodeId]);
                 }
             }
         }

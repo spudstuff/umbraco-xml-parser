@@ -88,11 +88,12 @@ var parser = new UmbracoXmlParser("umbraco.config", new Dictionary<int, string>
 | TemplateId  | Internal Umbraco template ID. Can be used to identify nodes by template.                       |
 
 #### UmbracoNode Methods
-| Name                                        | Description                                                                |
-| --------------------------------------------|----------------------------------------------------------------------------|
-| GetPropertyAsString(string propertyName)    | Gets the named property as a string.                                       |
-| GetPropertyAsBool(string propertyName)      | Gets the named property as a bool. Only the value 1 is treated as true.    |
-| GetPropertyAsInt(string propertyName)       | Gets the named property as an int.                                         |
-| GetPropertyAsDate(string propertyName)      | Gets the named property as a datetime. Format must be yyyy-MM-ddTHH:mm:ss. |
-| GetPropertyAsXmlString(string propertyName) | Gets the named property as an XML formatted string.                        |
+| Name                                        | Description                                                                                    |
+| --------------------------------------------|------------------------------------------------------------------------------------------------|
+| GetPropertyAsString(string propertyName)    | Gets the named property as a string.                                                           |
+| GetPropertyAsBool(string propertyName)      | Gets the named property as a bool. Only the value 1 is treated as true.                        |
+| GetPropertyAsInt(string propertyName)       | Gets the named property as an int.                                                             |
+| GetPropertyAsDate(string propertyName)      | Gets the named property as a datetime. Format must be yyyy-MM-ddTHH:mm:ss.                     |
+| GetPropertyAsXmlString(string propertyName) | Gets the named property as an XML formatted string.                                            |
+| GetProperties()                             | Get all properties in a dictionary with property names as keys and the values cast as strings. |
 

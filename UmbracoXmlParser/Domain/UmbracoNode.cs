@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Net;
+using System.Xml;
 using System.Xml.Linq;
 
 namespace RecursiveMethod.UmbracoXmlParser.Domain
@@ -137,6 +139,39 @@ namespace RecursiveMethod.UmbracoXmlParser.Domain
                 }
             }
             return null;
+        }
+
+        /// <summary>
+        /// Get all properties in a dictionary with property names as keys
+        /// and the values cast as strings.
+        /// </summary>
+        /// <returns>All properties for this node in a Dictionary&lt;string, string&gt;.</returns>
+        public Dictionary<string, string> GetProperties()
+        {
+            var dict = new Dictionary<string, string>();
+            foreach(var element in _element.Elements())
+            {
+                // Get value, even if XML
+                var reader = element.CreateReader();
+                reader.MoveToContent();
+                dict[element.Name.LocalName] = reader.ReadInnerXml();
+
+                // Drop CDATA
+                if (dict[element.Name.LocalName].StartsWith("<![CDATA["))
+                {
+                    dict[element.Name.LocalName] = dict[element.Name.LocalName].Substring("<![CDATA[".Length);
+                    if (dict[element.Name.LocalName].EndsWith("]]>"))
+                    {
+                        dict[element.Name.LocalName] = dict[element.Name.LocalName].Substring(0, dict[element.Name.LocalName].Length - "]]>".Length);
+                    }
+                }
+                else
+                {
+                    // Unescape XML entities
+                    dict[element.Name.LocalName] = WebUtility.HtmlDecode(dict[element.Name.LocalName]);
+                }
+            }
+            return dict;
         }
     }
 }
