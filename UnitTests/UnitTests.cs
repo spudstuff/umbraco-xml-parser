@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using RecursiveMethod.UmbracoXmlParser.Domain;
@@ -367,6 +368,18 @@ namespace RecursiveMethod.UmbracoXmlParser.UnitTests
             Assert.AreEqual("Jack & Jill", node.GetPropertyAsString("cdataString"));
             Assert.AreEqual("Jack &amp; Jill", dictionary["cdataEscapedString"]);
             Assert.AreEqual("Jack &amp; Jill", node.GetPropertyAsString("cdataEscapedString"));
+        }
+
+        [TestMethod]
+        public void GetChildren()
+        {
+            var parser = new UmbracoXmlParser(_tempFile);
+            var node = parser.GetNode(2447);
+            var children = node.Children;
+
+            Assert.AreEqual(2, children.Count());
+            Assert.AreEqual(2448, children.ElementAt(0).Id);
+            Assert.AreEqual(2499, children.ElementAt(1).Id);
         }
 
         private string GetUmbracoConfigFromResource(string resourceName = "umbraco.config")

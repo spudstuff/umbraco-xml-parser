@@ -12,7 +12,21 @@ namespace RecursiveMethod.UmbracoXmlParser.Domain
     {
         public int Id { get; private set; }
 
+        /// <summary>
+        /// Get the parent of the current node.
+        /// </summary>
         public UmbracoNode Parent { get; internal set; }
+
+        /// <summary>
+        /// Get children of the current node.
+        /// </summary>
+        public IEnumerable<UmbracoNode> Children
+        {
+            get
+            {
+                return _parser.GetNodes().Where(n => n.ParentId == Id);
+            }
+        }
 
         public int? ParentId { get; private set; }
         public string Name { get; private set; }
@@ -26,12 +40,16 @@ namespace RecursiveMethod.UmbracoXmlParser.Domain
         public string CreatorName { get; private set; }
         public string WriterName { get; private set; }
         public int TemplateId { get; private set; }
-        private readonly XElement _element;
 
-        internal UmbracoNode(int id, XElement element, string url, List<int> pathIds, List<string> pathNames)
+        private readonly XElement _element;
+        private readonly UmbracoXmlParser _parser;
+
+        internal UmbracoNode(UmbracoXmlParser parser, int id, XElement element, string url, List<int> pathIds, List<string> pathNames)
         {
-            Id = id;
             _element = element;
+            _parser = parser;
+
+            Id = id;
 
             ParentId = pathIds.Skip(pathIds.Count - 2).FirstOrDefault();
             if (ParentId == -1)

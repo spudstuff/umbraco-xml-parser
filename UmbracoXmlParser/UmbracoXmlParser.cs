@@ -104,7 +104,7 @@ namespace RecursiveMethod.UmbracoXmlParser
                     var url = GetUrlForNodeIdPaths(nodeIdPaths, element.Element("umbracoUrlAlias"));
                     var pathNames = GetPathNamesForNodeIdPaths(nodeIdPaths);
 
-                    _nodes[nodeId] = new UmbracoNode(nodeId, element, url, nodeIdPaths, pathNames);
+                    _nodes[nodeId] = new UmbracoNode(this, nodeId, element, url, nodeIdPaths, pathNames);
 
                     // Set parent
                     if (_nodes[nodeId].ParentId != null && _nodes.ContainsKey(_nodes[nodeId].ParentId.Value))
