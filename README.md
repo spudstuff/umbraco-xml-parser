@@ -123,7 +123,7 @@ var parser = new UmbracoXmlParser("umbraco.config", new UmbracoParsingOptions
 ```
 
 ##### Document Type Mapping (Umbraco 8.0.1 and later)
-The ability to associate one or more document type aliases to content type IDs. Umbraco 8.0.1 only keeps Content Node IDs in the NuCache binary format and not aliases.
+The ability to associate one or more document type aliases to content type IDs. Umbraco 8.0.1 only keeps Content Type IDs in the NuCache binary format and not aliases.
 
 ```cs
 var parser = new UmbracoXmlParser("NuCache.content.db", new UmbracoParsingOptions
