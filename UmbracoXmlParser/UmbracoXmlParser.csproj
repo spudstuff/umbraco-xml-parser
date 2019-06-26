@@ -9,8 +9,9 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>RecursiveMethod.UmbracoXmlParser</RootNamespace>
     <AssemblyName>RecursiveMethod.UmbracoXmlParser</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -20,6 +21,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -28,8 +30,13 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="CSharpTest.Net.Collections, Version=14.906.1403.1082, Culture=neutral, PublicKeyToken=06aee00cce822474, processorArchitecture=MSIL">
+      <HintPath>packages\CSharpTest.Net.Collections.14.906.1403.1082\lib\net40\CSharpTest.Net.Collections.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -39,10 +46,25 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Domain\UmbracoParsingOptions.cs" />
     <Compile Include="Domain\UmbracoNode.cs" />
     <Compile Include="Domain\UmbracoXmlParsingException.cs" />
+    <Compile Include="Umbraco8Core\ContentData.cs" />
+    <Compile Include="Umbraco8Core\ContentDataSerializer.cs" />
+    <Compile Include="Umbraco8Core\ContentNode.cs" />
+    <Compile Include="Umbraco8Core\ContentNodeKit.cs" />
+    <Compile Include="Umbraco8Core\ContentNodeKitSerializer.cs" />
+    <Compile Include="Umbraco8Core\CultureVariation.cs" />
+    <Compile Include="Umbraco8Core\DictionaryOfCultureVariationSerializer.cs" />
+    <Compile Include="Umbraco8Core\DictionaryOfPropertyDataSerializer.cs" />
+    <Compile Include="Umbraco8Core\KeyValuePairExtensions.cs" />
+    <Compile Include="Umbraco8Core\PropertyData.cs" />
+    <Compile Include="Umbraco8Core\SerializerBase.cs" />
     <Compile Include="UmbracoXmlParser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

@@ -2,18 +2,20 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
     <metadata>
         <id>RecursiveMethod.UmbracoXmlParser</id>
-        <version>1.0.4</version>
+        <version>1.1.0-beta</version>
         <title>RecursiveMethod.UmbracoXmlParser</title>
         <authors>Adam Nelson</authors>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>
-            Package for making parsing an umbraco.config XML cache file easier.
+            Package for making parsing an umbraco.config XML cache file easier. Beta support for Umbraco 8.0.1 and later NuCache DB format.
         </description>
         <projectUrl>https://github.com/spudstuff/umbraco-xml-parser</projectUrl>
-        <dependencies />
+        <dependencies>
+            <dependency id="CSharpTest.Net.Collections" version="14.906.1403.1082" />
+        </dependencies>
     </metadata>
     <files>
-        <file src="..\UmbracoXmlParser\bin\release\RecursiveMethod.UmbracoXmlParser.dll" target="lib\net40\" />
-        <file src="..\UmbracoXmlParser\bin\release\RecursiveMethod.UmbracoXmlParser.pdb" target="lib\net40\" />
+        <file src="..\UmbracoXmlParser\bin\release\RecursiveMethod.UmbracoXmlParser.dll" target="lib\net45\" />
+        <file src="..\UmbracoXmlParser\bin\release\RecursiveMethod.UmbracoXmlParser.pdb" target="lib\net45\" />
     </files>
 </package>

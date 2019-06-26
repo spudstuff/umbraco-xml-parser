@@ -5,12 +5,18 @@ using System.Linq;
 using System.Net;
 using System.Xml;
 using System.Xml.Linq;
+using RecursiveMethod.UmbracoXmlParser.Umbraco8Core;
 
 namespace RecursiveMethod.UmbracoXmlParser.Domain
 {
     public class UmbracoNode
     {
         public int Id { get; private set; }
+
+        /// <summary>
+        /// Umbraco 8.0.1 and later only.
+        /// </summary>
+        public string Uid { get; private set; }
 
         /// <summary>
         /// Get the parent of the current node.
@@ -42,8 +48,12 @@ namespace RecursiveMethod.UmbracoXmlParser.Domain
         public int TemplateId { get; private set; }
 
         private readonly XElement _element;
+        private readonly IDictionary<string, PropertyData[]> _propertyData;
         private readonly UmbracoXmlParser _parser;
 
+        /// <summary>
+        /// Construct from an Umbraco 4 through 7 XML element.
+        /// </summary>
         internal UmbracoNode(UmbracoXmlParser parser, int id, XElement element, string url, List<int> pathIds, List<string> pathNames)
         {
             _element = element;
@@ -85,16 +95,64 @@ namespace RecursiveMethod.UmbracoXmlParser.Domain
         }
 
         /// <summary>
+        /// Construct from an Umbraco 8 ContentNodeKit.
+        /// </summary>
+        internal UmbracoNode(UmbracoXmlParser parser, int id, ContentNodeKit treeNode, string url, List<int> pathIds, List<string> pathNames)
+        {
+            _parser = parser;
+            if (treeNode.PublishedData != null)
+            {
+                _propertyData = treeNode.PublishedData.Properties;
+            }
+
+            Id = id;
+            Uid = treeNode.Node.Uid.ToString().Replace("-", string.Empty).ToLower();
+
+            ParentId = pathIds.Skip(pathIds.Count - 2).FirstOrDefault();
+            if (ParentId == -1)
+            {
+                ParentId = null;
+            }
+
+            Name = pathNames.Last();
+            Url = url;
+            PathIds = pathIds.Skip(1).ToList(); // skip -1 root
+            PathNames = pathNames;
+            Doctype = _parser.Options.DoctypeMapping != null && _parser.Options.DoctypeMapping.ContainsKey(id) ? _parser.Options.DoctypeMapping[id] : treeNode.ContentTypeId.ToString();
+            Level = pathIds.Count - 1;
+            CreateDate = new DateTime(treeNode.Node.CreateDate.Ticks - (treeNode.Node.CreateDate.Ticks % TimeSpan.TicksPerSecond), treeNode.Node.CreateDate.Kind);
+            UpdateDate = treeNode.PublishedData != null ? new DateTime(treeNode.PublishedData.VersionDate.Ticks - (treeNode.PublishedData.VersionDate.Ticks % TimeSpan.TicksPerSecond), treeNode.PublishedData.VersionDate.Kind) : CreateDate;
+            CreatorName = _parser.Options.UserMapping != null && _parser.Options.UserMapping.ContainsKey(treeNode.Node.CreatorId) ? _parser.Options.UserMapping[treeNode.Node.CreatorId] : treeNode.Node.CreatorId.ToString();
+            WriterName = _parser.Options.UserMapping != null && treeNode.PublishedData != null && _parser.Options.UserMapping.ContainsKey(treeNode.PublishedData.WriterId) ? _parser.Options.UserMapping[treeNode.PublishedData.WriterId] : treeNode.PublishedData != null ? treeNode.PublishedData.WriterId.ToString() : null;
+            TemplateId = treeNode.PublishedData != null && treeNode.PublishedData.TemplateId.HasValue ? treeNode.PublishedData.TemplateId.Value : default(int);
+        }
+
+        /// <summary>
         /// Gets the named property as a string.
         /// </summary>
         /// <param name="propertyName">Case sensitive property name.</param>
         /// <returns>Property value as a string, or null if not found.</returns>
         public string GetPropertyAsString(string propertyName)
         {
-            if (_element.Element(propertyName) != null)
+            if (_element != null)
             {
-                return _element.Element(propertyName).Value;
+                if (_element.Element(propertyName) != null)
+                {
+                    return _element.Element(propertyName).Value;
+                }
             }
+            else if (_propertyData != null)
+            {
+                if (_propertyData.ContainsKey(propertyName))
+                {
+                    var property = _propertyData[propertyName].FirstOrDefault();
+                    if (property != null && property.Value != null)
+                    {
+                        return property.Value.ToString();
+                    }
+                }
+            }
+
             return null;
         }
 
@@ -131,12 +189,30 @@ namespace RecursiveMethod.UmbracoXmlParser.Domain
         /// <returns>Property value as a datetime, or null if not found.</returns>
         public DateTime? GetPropertyAsDate(string propertyName)
         {
-            var val = GetPropertyAsString(propertyName);
-            if (String.IsNullOrWhiteSpace(val))
+            if (_element != null)
             {
-                return null;
+                var val = GetPropertyAsString(propertyName);
+                if (String.IsNullOrWhiteSpace(val))
+                {
+                    return null;
+                }
+
+                return DateTime.ParseExact(val, "yyyy-MM-ddTHH:mm:ss", CultureInfo.GetCultureInfo("en-us"));
             }
-            return DateTime.ParseExact(val, "yyyy-MM-ddTHH:mm:ss", CultureInfo.GetCultureInfo("en-us"));
+
+            if (_propertyData != null)
+            {
+                if (_propertyData.ContainsKey(propertyName))
+                {
+                    var property = _propertyData[propertyName].FirstOrDefault();
+                    if (property != null && property.Value != null)
+                    {
+                        return property.Value as DateTime?;
+                    }
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -146,16 +222,37 @@ namespace RecursiveMethod.UmbracoXmlParser.Domain
         /// <returns>Property value as an XML formatted string, or null if not found.</returns>
         public string GetPropertyAsXmlString(string propertyName)
         {
-            if (_element.Element(propertyName) != null)
+            if (_element != null)
             {
-                var xml = _element.Element(propertyName).ToString();
-                var xmlDoc = XDocument.Parse(xml);
-                if (xmlDoc.Root.HasElements)
+                if (_element.Element(propertyName) != null)
                 {
-                    var inner = xmlDoc.Root.FirstNode.ToString();
-                    return inner;
+                    var xml = _element.Element(propertyName).ToString();
+                    var xmlDoc = XDocument.Parse(xml);
+                    if (xmlDoc.Root.HasElements)
+                    {
+                        var inner = xmlDoc.Root.FirstNode.ToString();
+                        return inner;
+                    }
                 }
             }
+            else if (_propertyData != null)
+            {
+                if (_propertyData.ContainsKey(propertyName))
+                {
+                    var property = _propertyData[propertyName].FirstOrDefault();
+                    if (property != null)
+                    {
+                        var xml = property.Value as string;
+                        var xmlDoc = XDocument.Parse(xml);
+                        if (xmlDoc.Root.HasElements)
+                        {
+                            var inner = xmlDoc.Root.FirstNode.ToString();
+                            return inner;
+                        }
+                    }
+                }
+            }
+
             return null;
         }
 
@@ -167,28 +264,72 @@ namespace RecursiveMethod.UmbracoXmlParser.Domain
         public Dictionary<string, string> GetProperties()
         {
             var dict = new Dictionary<string, string>();
-            foreach(var element in _element.Elements())
+            if (_element != null)
             {
-                // Get value, even if XML
-                var reader = element.CreateReader();
-                reader.MoveToContent();
-                dict[element.Name.LocalName] = reader.ReadInnerXml();
-
-                // Drop CDATA
-                if (dict[element.Name.LocalName].StartsWith("<![CDATA["))
+                foreach (var element in _element.Elements())
                 {
-                    dict[element.Name.LocalName] = dict[element.Name.LocalName].Substring("<![CDATA[".Length);
-                    if (dict[element.Name.LocalName].EndsWith("]]>"))
+                    // Get value, even if XML
+                    var reader = element.CreateReader();
+                    reader.MoveToContent();
+                    dict[element.Name.LocalName] = reader.ReadInnerXml();
+
+                    // Drop CDATA
+                    if (dict[element.Name.LocalName].StartsWith("<![CDATA["))
                     {
-                        dict[element.Name.LocalName] = dict[element.Name.LocalName].Substring(0, dict[element.Name.LocalName].Length - "]]>".Length);
+                        dict[element.Name.LocalName] = dict[element.Name.LocalName].Substring("<![CDATA[".Length);
+                        if (dict[element.Name.LocalName].EndsWith("]]>"))
+                        {
+                            dict[element.Name.LocalName] = dict[element.Name.LocalName].Substring(0, dict[element.Name.LocalName].Length - "]]>".Length);
+                        }
+                    }
+                    else
+                    {
+                        // Unescape XML entities
+                        dict[element.Name.LocalName] = WebUtility.HtmlDecode(dict[element.Name.LocalName]);
                     }
                 }
-                else
+            }
+            else if (_propertyData != null)
+            {
+                foreach (var propertyName in _propertyData.Keys)
                 {
-                    // Unescape XML entities
-                    dict[element.Name.LocalName] = WebUtility.HtmlDecode(dict[element.Name.LocalName]);
+                    var property = _propertyData[propertyName].FirstOrDefault();
+                    if (property != null && property.Value != null)
+                    {
+                        dict[propertyName] = property.Value.ToString();
+                    }
                 }
             }
+
+            return dict;
+        }
+
+        /// <summary>
+        /// Get all properties in a dictionary with property names as keys
+        /// and the values typed. This typing only occurs when using with Umbraco 8 or later.
+        /// In earlier versions of Umbraco these are treated as strings.
+        /// </summary>
+        /// <returns>All properties for this node in a Dictionary&lt;string, object&gt;.</returns>
+        public Dictionary<string, object> GetTypedProperties()
+        {
+            if (_element != null)
+            {
+                return GetProperties().ToDictionary(k => k.Key, v => (object)v.Value);
+            }
+
+            var dict = new Dictionary<string, object>();
+            if (_propertyData != null)
+            {
+                foreach (var propertyName in _propertyData.Keys)
+                {
+                    var property = _propertyData[propertyName].FirstOrDefault();
+                    if (property != null)
+                    {
+                        dict[propertyName] = property.Value;
+                    }
+                }
+            }
+
             return dict;
         }
     }
