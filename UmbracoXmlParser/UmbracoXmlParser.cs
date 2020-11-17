@@ -78,18 +78,26 @@ namespace RecursiveMethod.UmbracoXmlParser
                 throw new ArgumentException(umbracoConfigOrNuCacheDb);
             }
 
-            // Check first byte. If it's XML it will start with '<'
-            int firstByte = 0x00;
+            // Check first few bytes. If it's XML it will start with '<' (potentially after a BOM)
+            byte[] buffer = new byte[10];
             using (var stream = new FileStream(umbracoConfigOrNuCacheDb, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
-                firstByte = stream.ReadByte();
+                stream.Read(buffer, 0, 10);
             }
 
             // It's an umbraco 4 through 7 XML cache file
-            if (firstByte == '<')
+            if (buffer[0] == '<' ||
+                buffer[0] == 0xef && buffer[1] == 0xbb && buffer[2] == 0xbf && buffer[3] == '<') // UTF-8 BOM
             {
-                // Load XML into an XDocument
-                ParsedXml = XDocument.Load(umbracoConfigOrNuCacheDb);
+                try
+                {
+                    // Load XML into an XDocument
+                    ParsedXml = XDocument.Load(umbracoConfigOrNuCacheDb);
+                }
+                catch (Exception ex)
+                {
+                    throw new UmbracoXmlParsingException($"Could not parse {umbracoConfigOrNuCacheDb} as XML - {ex.Message}");
+                }
 
                 // Parse content into an in-memory dictionary of node ID and node information
                 ParseXmlIntoUmbracoNodes();
@@ -100,17 +108,24 @@ namespace RecursiveMethod.UmbracoXmlParser
             else
             {
                 // Umbraco 8.0.1 or later NuCache db file
-                var keySerializer = new PrimitiveSerializer();
-                var valueSerializer = new ContentNodeKitSerializer();
-                var bPlusTreeOptions = new BPlusTree<int, ContentNodeKit>.OptionsV2(keySerializer, valueSerializer)
+                try
                 {
-                    CreateFile = CreatePolicy.Never,
-                    FileName = umbracoConfigOrNuCacheDb,
-                    ReadOnly = true
-                };
+                    var keySerializer = new PrimitiveSerializer();
+                    var valueSerializer = new ContentNodeKitSerializer();
+                    var bPlusTreeOptions = new BPlusTree<int, ContentNodeKit>.OptionsV2(keySerializer, valueSerializer)
+                    {
+                        CreateFile = CreatePolicy.Never,
+                        FileName = umbracoConfigOrNuCacheDb,
+                        ReadOnly = true
+                    };
 
-                // Read the file into a BPlusTreeObject
-                ParsedTree = new BPlusTree<int, ContentNodeKit>(bPlusTreeOptions);
+                    // Read the file into a BPlusTreeObject
+                    ParsedTree = new BPlusTree<int, ContentNodeKit>(bPlusTreeOptions);
+                }
+                catch (Exception ex)
+                {
+                    throw new UmbracoXmlParsingException($"Could not parse {umbracoConfigOrNuCacheDb} as a NuCache DB - {ex.Message}");
+                }
 
                 // Parse content into an in-memory dictionary of node ID and node information
                 ParseTreeIntoUmbracoNodes();
@@ -370,12 +385,18 @@ namespace RecursiveMethod.UmbracoXmlParser
                     // Save UID
                     _guidToNodeIdMapping[treeNode.Node.Uid.ToString().Replace("-", string.Empty).ToLower()] = nodeId;
 
-                    if (treeNode.PublishedData != null && !String.IsNullOrEmpty(treeNode.PublishedData.UrlSegment))
+                    ContentData dataSource = treeNode.PublishedData;
+                    if (dataSource == null)
                     {
-                        var urlName = treeNode.PublishedData.UrlSegment;
+                        dataSource = treeNode.DraftData;
+                    }
+
+                    if (dataSource != null && !String.IsNullOrEmpty(dataSource.UrlSegment))
+                    {
+                        var urlName = dataSource.UrlSegment;
 
                         // Can be overridden with an umbracoUrlName element
-                        var umbracoUrlNameProperty = treeNode.PublishedData.Properties.FirstOrDefault(p => p.Key == "umbracoUrlName");
+                        var umbracoUrlNameProperty = dataSource.Properties.FirstOrDefault(p => p.Key == "umbracoUrlName");
                         if (umbracoUrlNameProperty.Value != null && umbracoUrlNameProperty.Value.FirstOrDefault() != null)
                         {
                             urlName = umbracoUrlNameProperty.Value.FirstOrDefault().Value as string;
@@ -392,7 +413,7 @@ namespace RecursiveMethod.UmbracoXmlParser
 
                         }
 
-                        _pathFragmentCache[nodeId] = treeNode.PublishedData.Name;
+                        _pathFragmentCache[nodeId] = dataSource.Name;
                     }
                 }
             }
