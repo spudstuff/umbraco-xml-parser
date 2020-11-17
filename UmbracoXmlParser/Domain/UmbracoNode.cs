@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net;
-using System.Xml;
 using System.Xml.Linq;
 using RecursiveMethod.UmbracoXmlParser.Umbraco8Core;
 
@@ -271,6 +270,12 @@ namespace RecursiveMethod.UmbracoXmlParser.Domain
                     // Get value, even if XML
                     var reader = element.CreateReader();
                     reader.MoveToContent();
+                    if (reader.HasAttributes && reader.GetAttribute("nodeTypeAlias") != null && reader.GetAttribute("nodeName") != null && reader.GetAttribute("urlName") != null)
+                    {
+                        // It's a child node and not a property, so skip it
+                        continue;
+                    }
+
                     dict[element.Name.LocalName] = reader.ReadInnerXml();
 
                     // Drop CDATA

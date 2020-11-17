@@ -353,6 +353,17 @@ namespace RecursiveMethod.UmbracoXmlParser.UnitTests
         }
 
         [TestMethod]
+        public void GetPropertiesIgnoresChildNodes()
+        {
+            var parser = new UmbracoXmlParser(_tempFile);
+            var node = parser.GetNode(2447);
+            var dictionary = node.GetProperties();
+            Assert.AreEqual(2, dictionary.Keys.Count);
+            Assert.AreEqual("2015-05-13T12:10:32", dictionary["dateField"]);
+            Assert.AreEqual("1", dictionary["boolField"]);
+        }
+
+        [TestMethod]
         public void TestEscapingAndCdata()
         {
             var parser = new UmbracoXmlParser(_tempFile);
