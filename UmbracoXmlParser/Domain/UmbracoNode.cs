@@ -117,7 +117,7 @@ namespace RecursiveMethod.UmbracoXmlParser.Domain
             Url = url;
             PathIds = pathIds.Skip(1).ToList(); // skip -1 root
             PathNames = pathNames;
-            Doctype = _parser.Options.DoctypeMapping != null && _parser.Options.DoctypeMapping.ContainsKey(id) ? _parser.Options.DoctypeMapping[id] : treeNode.ContentTypeId.ToString();
+            Doctype = _parser.Options.DoctypeMapping != null && _parser.Options.DoctypeMapping.ContainsKey(treeNode.ContentTypeId) ? _parser.Options.DoctypeMapping[treeNode.ContentTypeId] : treeNode.ContentTypeId.ToString();
             Level = pathIds.Count - 1;
             CreateDate = new DateTime(treeNode.Node.CreateDate.Ticks - (treeNode.Node.CreateDate.Ticks % TimeSpan.TicksPerSecond), treeNode.Node.CreateDate.Kind);
             UpdateDate = treeNode.PublishedData != null ? new DateTime(treeNode.PublishedData.VersionDate.Ticks - (treeNode.PublishedData.VersionDate.Ticks % TimeSpan.TicksPerSecond), treeNode.PublishedData.VersionDate.Kind) : CreateDate;

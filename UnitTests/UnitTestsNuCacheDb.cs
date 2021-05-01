@@ -61,7 +61,7 @@ namespace RecursiveMethod.UmbracoXmlParser.UnitTests
             var parser = new UmbracoXmlParser(_tempFile, new UmbracoParsingOptions
             {
                 UrlPrefixMapping = new Dictionary<int, string> { { 1095, "https://www.example.com/" } },
-                DoctypeMapping = new Dictionary<int, string> { { 1095, "HomeDoctype" } },
+                DoctypeMapping = new Dictionary<int, string> { { 1089, "HomeDoctype" } },
                 UserMapping = new Dictionary<int, string> { { -1, "admin" } }
             });
             var node = parser.GetNode(1095);
