@@ -42,7 +42,7 @@ namespace RecursiveMethod.UmbracoXmlParser.UnitTests
             }
             catch (UmbracoXmlParsingException ex)
             {
-                Assert.AreEqual("Unparsable createDate attribute '2017-05-16T08:55:20.4171241+10:00' on node ID 1072", ex.Message);
+                Assert.IsTrue(ex.Message.Contains("Unparsable createDate attribute '2017-05-16T08:55:20.4171241+10:00' on node ID 1072"));
                 exceptionThrown = true;
             }
             try
@@ -70,7 +70,7 @@ namespace RecursiveMethod.UmbracoXmlParser.UnitTests
             }
             catch (UmbracoXmlParsingException ex)
             {
-                Assert.AreEqual("Unparsable updateDate attribute '2017-05-16T08:55:20.4171241+10:00' on node ID 1072", ex.Message);
+                Assert.IsTrue(ex.Message.Contains("Unparsable updateDate attribute '2017-05-16T08:55:20.4171241+10:00' on node ID 1072"));
                 exceptionThrown = true;
             }
             try
@@ -211,6 +211,14 @@ namespace RecursiveMethod.UmbracoXmlParser.UnitTests
             var parser = new UmbracoXmlParser(_tempFile);
             var node = parser.GetNode(2552);
             Assert.AreEqual(new DateTime(2015, 5, 22, 12, 10, 22), node.GetPropertyAsDate("dateField"));
+        }
+
+        [TestMethod]
+        public void GetPropertyAsStringDoesntFindChildNode()
+        {
+            var parser = new UmbracoXmlParser(_tempFile);
+            var node = parser.GetNode(2447);
+            Assert.IsNull(node.GetPropertyAsString("Article"));
         }
 
         [TestMethod]

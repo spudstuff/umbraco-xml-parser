@@ -135,7 +135,7 @@ namespace RecursiveMethod.UmbracoXmlParser.Domain
         {
             if (_element != null)
             {
-                if (_element.Element(propertyName) != null)
+                if (_element.Element(propertyName) != null && _element.Element(propertyName).Attribute("id") == null && _element.Element(propertyName).Attribute("urlName") == null)
                 {
                     return _element.Element(propertyName).Value;
                 }
@@ -223,7 +223,7 @@ namespace RecursiveMethod.UmbracoXmlParser.Domain
         {
             if (_element != null)
             {
-                if (_element.Element(propertyName) != null)
+                if (_element.Element(propertyName) != null && _element.Element(propertyName).Attribute("id") == null && _element.Element(propertyName).Attribute("urlName") == null)
                 {
                     var xml = _element.Element(propertyName).ToString();
                     var xmlDoc = XDocument.Parse(xml);
@@ -265,12 +265,12 @@ namespace RecursiveMethod.UmbracoXmlParser.Domain
             var dict = new Dictionary<string, string>();
             if (_element != null)
             {
-                foreach (var element in _element.Elements())
+                foreach (var element in _element.Elements().Where(e => e.Attribute("id") == null && e.Attribute("urlName") == null))
                 {
                     // Get value, even if XML
                     var reader = element.CreateReader();
                     reader.MoveToContent();
-                    if (reader.HasAttributes && reader.GetAttribute("nodeTypeAlias") != null && reader.GetAttribute("nodeName") != null && reader.GetAttribute("urlName") != null)
+                    if (reader.HasAttributes && reader.GetAttribute("nodeTypeAlias") != null && reader.GetAttribute("nodeName") != null)
                     {
                         // It's a child node and not a property, so skip it
                         continue;

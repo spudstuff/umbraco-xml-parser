@@ -93,47 +93,52 @@ namespace RecursiveMethod.UmbracoXmlParser
                 {
                     // Load XML into an XDocument
                     ParsedXml = XDocument.Load(umbracoConfigOrNuCacheDb);
+
+                    // Parse content into an in-memory dictionary of node ID and node information
+                    ParseXmlIntoUmbracoNodes();
+
+                    // Destroy
+                    ParsedXml = null;
+                    return;
                 }
-                catch (Exception ex)
+                catch (UmbracoXmlParsingException ex)
                 {
+                    ParsedXml = null;
                     throw new UmbracoXmlParsingException($"Could not parse {umbracoConfigOrNuCacheDb} as XML - {ex.Message}");
                 }
-
-                // Parse content into an in-memory dictionary of node ID and node information
-                ParseXmlIntoUmbracoNodes();
-
-                // Destroy
-                ParsedXml = null;
+                catch
+                {
+                    ParsedXml = null;
+                    // Might be a NuCache file
+                }
             }
-            else
+            
+            // Umbraco 8.0.1 or later NuCache db file
+            try
             {
-                // Umbraco 8.0.1 or later NuCache db file
-                try
+                var keySerializer = new PrimitiveSerializer();
+                var valueSerializer = new ContentNodeKitSerializer();
+                var bPlusTreeOptions = new BPlusTree<int, ContentNodeKit>.OptionsV2(keySerializer, valueSerializer)
                 {
-                    var keySerializer = new PrimitiveSerializer();
-                    var valueSerializer = new ContentNodeKitSerializer();
-                    var bPlusTreeOptions = new BPlusTree<int, ContentNodeKit>.OptionsV2(keySerializer, valueSerializer)
-                    {
-                        CreateFile = CreatePolicy.Never,
-                        FileName = umbracoConfigOrNuCacheDb,
-                        ReadOnly = true
-                    };
+                    CreateFile = CreatePolicy.Never,
+                    FileName = umbracoConfigOrNuCacheDb,
+                    ReadOnly = true
+                };
 
-                    // Read the file into a BPlusTreeObject
-                    ParsedTree = new BPlusTree<int, ContentNodeKit>(bPlusTreeOptions);
-                }
-                catch (Exception ex)
-                {
-                    throw new UmbracoXmlParsingException($"Could not parse {umbracoConfigOrNuCacheDb} as a NuCache DB - {ex.Message}");
-                }
-
-                // Parse content into an in-memory dictionary of node ID and node information
-                ParseTreeIntoUmbracoNodes();
-
-                // Destroy
-                ParsedTree.Dispose();
-                ParsedTree = null;
+                // Read the file into a BPlusTreeObject
+                ParsedTree = new BPlusTree<int, ContentNodeKit>(bPlusTreeOptions);
             }
+            catch (Exception ex)
+            {
+                throw new UmbracoXmlParsingException($"Could not parse {umbracoConfigOrNuCacheDb} as a NuCache DB - {ex.Message}");
+            }
+
+            // Parse content into an in-memory dictionary of node ID and node information
+            ParseTreeIntoUmbracoNodes();
+
+            // Destroy
+            ParsedTree.Dispose();
+            ParsedTree = null;
         }
 
         /// <summary>
